@@ -1,7 +1,8 @@
 package it.hl.neo4j.service;
 
-import it.hl.neo4j.dto.OllamaRequest;
-import it.hl.neo4j.dto.OllamaResponse;
+import it.hl.neo4j.dto.GroqMessage;
+import it.hl.neo4j.dto.GroqRequest;
+import it.hl.neo4j.dto.GroqResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -11,68 +12,75 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
+import java.util.List;
 
 @Service
-@ConditionalOnProperty(name = "llm.provider", havingValue = "ollama")
+@ConditionalOnProperty(name = "llm.provider", havingValue = "groq")
 @Slf4j
-public class OllamaLLMService implements LLMService {
+public class GroqLLMService implements LLMService {
 
     private final WebClient webClient;
+    private final String apiKey;
     private final String model;
 
-    public OllamaLLMService(@Value("${ollama.base-url:http://localhost:11434}") String baseUrl,
-                            @Value("${ollama.model:llama3.1:8b}") String model) {
+    public GroqLLMService(@Value("${groq.api.key}") String apiKey,
+                          @Value("${groq.model:llama3-8b-8192}") String model) {
+        this.apiKey = apiKey;
         this.model = model;
         this.webClient = WebClient.builder()
-                .baseUrl(baseUrl)
+                .baseUrl("https://api.groq.com/openai/v1")
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
     }
 
-    private static final String CYPHER_SYSTEM_PROMPT = """
+    private static final String SYSTEM_MESSAGE = """
         Sei un generatore di query Cypher per Neo4j. Converti il linguaggio naturale italiano in query Cypher valide.
         
         Schema:
         - Nodi Soggetto: proprietà (identificativoSoggetto, nome, displayName, tipoSoggetto, cognome, nomePersonaFisica, codiceFiscale, denominazione, sede, partitaIva, identificativoFiscale)
         - Nodi Terreno: proprietà (identificativoImmobile, displayName, foglio, numero, qualita, classe, ettari, are, centiare, redditoDominicaleEuro, redditoAgrarioEuro)
-        - Relazione OWNS: (Soggetto)-[OWNS]->(Terreno) con proprietà (quotaNumeratore, quotaDenominatore, codiceDiritto, regime, dataValidita)
+        - Relazione OWNS: (Soggetto)-[OWNS]->(Terreno)
         
         Importante:
         - Usa sempre le etichette esatte: "Soggetto" e "Terreno"
         - Quando possibile, restituisci entità correlate: RETURN s, t
-        - Per query sui soggetti che coinvolgono terreni: RETURN s, t
-        - Per query sui terreni che coinvolgono proprietari: RETURN s, t
+        - Restituisci solo la query Cypher, nessuna spiegazione
         
         Esempi:
         "Trova tutti i terreni di Mario" -> MATCH (s:Soggetto)-[:OWNS]->(t:Terreno) WHERE toLower(s.nome) CONTAINS toLower('Mario') RETURN s, t
-        "Mostrami i soggetti che possiedono terreni nel foglio 5" -> MATCH (s:Soggetto)-[:OWNS]->(t:Terreno) WHERE t.foglio = '5' RETURN s, t
-        
-        Converti questa richiesta (restituisci solo Cypher, nessuna spiegazione):
         """;
 
     @Override
     public String translateToCypher(String naturalQuery) {
-        String fullPrompt = CYPHER_SYSTEM_PROMPT + naturalQuery;
-
-        OllamaRequest request = new OllamaRequest(model, fullPrompt);
+        GroqRequest request = GroqRequest.builder()
+                .model(model)
+                .messages(List.of(
+                        new GroqMessage("system", SYSTEM_MESSAGE),
+                        new GroqMessage("user", naturalQuery)
+                ))
+                .temperature(0.1)
+                .maxTokens(1000)
+                .build();
 
         try {
-            OllamaResponse response = webClient.post()
-                    .uri("/api/generate")
+            GroqResponse response = webClient.post()
+                    .uri("/chat/completions")
+                    .header("Authorization", "Bearer " + apiKey)
                     .bodyValue(request)
                     .retrieve()
-                    .bodyToMono(OllamaResponse.class)
+                    .bodyToMono(GroqResponse.class)
                     .timeout(Duration.ofSeconds(30))
                     .block();
 
-            if (response != null && response.getResponse() != null) {
-                return cleanCypherQuery(response.getResponse());
+            if (response != null && !response.getChoices().isEmpty()) {
+                String cypherQuery = response.getChoices().get(0).getMessage().getContent();
+                return cleanCypherQuery(cypherQuery);
             }
 
-            throw new RuntimeException("Risposta vuota da Ollama");
+            throw new RuntimeException("Risposta vuota da Groq");
 
         } catch (Exception e) {
-            log.error("Errore nella chiamata a Ollama: {}", e.getMessage());
+            log.error("Errore nella chiamata a Groq: {}", e.getMessage());
             throw new RuntimeException("Impossibile generare la query Cypher", e);
         }
     }
@@ -81,14 +89,15 @@ public class OllamaLLMService implements LLMService {
     public boolean isAvailable() {
         try {
             webClient.get()
-                    .uri("/api/tags")
+                    .uri("/models")
+                    .header("Authorization", "Bearer " + apiKey)
                     .retrieve()
                     .bodyToMono(String.class)
                     .timeout(Duration.ofSeconds(5))
                     .block();
             return true;
         } catch (Exception e) {
-            log.warn("Ollama non disponibile: {}", e.getMessage());
+            log.warn("Groq non disponibile: {}", e.getMessage());
             return false;
         }
     }

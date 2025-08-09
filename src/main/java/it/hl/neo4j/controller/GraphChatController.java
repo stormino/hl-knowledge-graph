@@ -2,14 +2,14 @@ package it.hl.neo4j.controller;
 
 import it.hl.neo4j.dto.ChatRequest;
 import it.hl.neo4j.dto.GraphQueryResponse;
-import it.hl.neo4j.model.Sog;
-import it.hl.neo4j.model.Ter;
 import it.hl.neo4j.service.GraphQueryService;
+import it.hl.neo4j.service.LLMService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.time.Instant;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/graph")
@@ -17,9 +17,11 @@ import java.util.List;
 public class GraphChatController {
 
     private final GraphQueryService queryService;
+    private final LLMService llmService;
 
-    public GraphChatController(GraphQueryService queryService) {
+    public GraphChatController(GraphQueryService queryService, LLMService llmService) {
         this.queryService = queryService;
+        this.llmService = llmService;
     }
 
     @PostMapping("/chat")
@@ -30,15 +32,13 @@ public class GraphChatController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/chat/soggetti")
-    public ResponseEntity<List<Sog>> chatSoggetti(@RequestBody ChatRequest request) {
-        List<Sog> results = queryService.findSoggetti(request.getMessage());
-        return ResponseEntity.ok(results);
-    }
-
-    @PostMapping("/chat/terreni")
-    public ResponseEntity<List<Ter>> chatTerreni(@RequestBody ChatRequest request) {
-        List<Ter> results = queryService.findTerreni(request.getMessage());
-        return ResponseEntity.ok(results);
+    @GetMapping("/health")
+    public ResponseEntity<Map<String, Object>> health() {
+        return ResponseEntity.ok(Map.of(
+                "status", "UP",
+                "llm_provider", llmService.getClass().getSimpleName(),
+                "llm_available", llmService.isAvailable(),
+                "timestamp", Instant.now()
+        ));
     }
 }

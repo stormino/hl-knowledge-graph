@@ -3,6 +3,7 @@ package it.hl.neo4j.service;
 import it.hl.neo4j.dto.GraphQueryResponse;
 import it.hl.neo4j.model.Sog;
 import it.hl.neo4j.model.Ter;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.neo4j.core.Neo4jTemplate;
 import org.springframework.stereotype.Service;
@@ -17,11 +18,20 @@ import java.util.stream.Collectors;
 public class GraphQueryService {
 
     private final Neo4jTemplate neo4jTemplate;
-    private final OllamaLLMService llmService;
+    private final LLMService llmService;
 
-    public GraphQueryService(Neo4jTemplate neo4jTemplate, OllamaLLMService llmService) {
+    public GraphQueryService(Neo4jTemplate neo4jTemplate, LLMService llmService) {
         this.neo4jTemplate = neo4jTemplate;
         this.llmService = llmService;
+    }
+
+    @PostConstruct
+    public void checkLLMAvailability() {
+        if (!llmService.isAvailable()) {
+            log.warn("Servizio LLM non disponibile all'avvio");
+        } else {
+            log.info("Servizio LLM {} disponibile", llmService.getClass().getSimpleName());
+        }
     }
 
     public GraphQueryResponse processNaturalLanguageQuery(String userQuery) {
