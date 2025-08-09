@@ -72,6 +72,8 @@ public class OwnershipRelationship {
     private String codiceCausaleAttoConclusivo;
     @Property
     private String descrizioneAttoConclusivo;
+    @Property
+    private String displayName;
 
     @TargetNode
     private Ter terreno;
@@ -109,6 +111,7 @@ public class OwnershipRelationship {
         ownership.setCodiceCausaleAttoConclusivo(tit.getCodiceCausaleAttoConclusivo());
         ownership.setDescrizioneAttoConclusivo(tit.getDescrizioneAttoConclusivo());
         ownership.setTerreno(tit.getTerreno());
+        ownership.setDisplayName(tit.getDisplayName());
         return ownership;
     }
 }

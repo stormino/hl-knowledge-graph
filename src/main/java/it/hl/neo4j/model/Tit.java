@@ -72,6 +72,8 @@ public class Tit {
     private String codiceCausaleAttoConclusivo;
     @Property
     private String descrizioneAttoConclusivo;
+    @Property
+    private String displayName;
 
     @TargetNode
     private Ter terreno;
@@ -115,6 +117,12 @@ public class Tit {
         tit.setCodiceCausaleAttoConclusivo(fields[30]);
         tit.setDescrizioneAttoConclusivo(fields[31]);
 
+        // Set display name for better visualization
+        if (tit.quotaDenominatore.compareTo("0") != 0 && tit.quotaNumeratore.compareTo("0") != 0) {
+            tit.setDisplayName(CodiciDiritto.fromCodice(tit.codiceDiritto).getDescrizione() + " (" + tit.quotaNumeratore + "/" + tit.quotaDenominatore + ")");
+        } else {
+            tit.setDisplayName(CodiciDiritto.fromCodice(tit.codiceDiritto).getDescrizione());
+        }
         return tit;
     }
 
