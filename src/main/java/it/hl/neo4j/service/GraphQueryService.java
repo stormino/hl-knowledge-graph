@@ -1,10 +1,14 @@
 package it.hl.neo4j.service;
 
 import it.hl.neo4j.dto.GraphQueryResponse;
+import it.hl.neo4j.dto.RawQueryRequest;
 import it.hl.neo4j.model.Sog;
 import it.hl.neo4j.model.Ter;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.neo4j.driver.Driver;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.data.neo4j.core.Neo4jTemplate;
 import org.springframework.stereotype.Service;
 
@@ -19,8 +23,13 @@ public class GraphQueryService {
 
     private final Neo4jTemplate neo4jTemplate;
     private final LLMService llmService;
+    private final Driver driver;
 
-    public GraphQueryService(Neo4jTemplate neo4jTemplate, LLMService llmService) {
+    @Autowired
+    Neo4jClient neo4jClient;
+
+    public GraphQueryService(Driver driver, Neo4jTemplate neo4jTemplate, LLMService llmService) {
+        this.driver = driver;
         this.neo4jTemplate = neo4jTemplate;
         this.llmService = llmService;
     }
@@ -65,41 +74,6 @@ public class GraphQueryService {
                     .success(false)
                     .error(e.getMessage())
                     .build();
-        }
-    }
-
-    // Specific methods for each domain class
-    public List<Sog> findSoggetti(String naturalQuery) {
-        try {
-            String cypherQuery = llmService.translateToCypher(naturalQuery);
-            validateCypher(cypherQuery);
-
-            return neo4jTemplate.find(Sog.class)
-                    .matching(cypherQuery)
-                    .all()
-                    .stream()
-                    .collect(Collectors.toList());
-
-        } catch (Exception e) {
-            log.error("Error finding Soggetti: {}", e.getMessage());
-            return Collections.emptyList();
-        }
-    }
-
-    public List<Ter> findTerreni(String naturalQuery) {
-        try {
-            String cypherQuery = llmService.translateToCypher(naturalQuery);
-            validateCypher(cypherQuery);
-
-            return neo4jTemplate.find(Ter.class)
-                    .matching(cypherQuery)
-                    .all()
-                    .stream()
-                    .collect(Collectors.toList());
-
-        } catch (Exception e) {
-            log.error("Error finding Terreni: {}", e.getMessage());
-            return Collections.emptyList();
         }
     }
 
@@ -309,5 +283,31 @@ public class GraphQueryService {
         if (upperCypher.contains("DELETE") || upperCypher.contains("DETACH")) {
             throw new SecurityException("DELETE operations not allowed");
         }
+    }
+
+//    public List<Map<String, Object>> rawQuery(RawQueryRequest rawQueryRequest) {
+//        try (Session session = driver.session()) {
+//            // result.list().getFirst().values().getFirst().asMap()
+//            Result result = session.run(rawQueryRequest.getCypherQuery(), rawQueryRequest.getParameters());
+//            return result.list(MapAccessor::asMap);
+//        }
+//    }
+
+    public List<Map<String, Object>> rawQuery(RawQueryRequest rawQueryRequest) {
+        Neo4jClient.UnboundRunnableSpec query = neo4jClient.query(rawQueryRequest.getCypherQuery());
+
+//        // Bind parameters if provided
+//        if (parameters.length > 0) {
+//            if (parameters.length == 1 && parameters[0] instanceof Map) {
+//                query = query.bindAll((Map<String, Object>) parameters[0]);
+//            } else {
+//                // Handle positional parameters
+//                for (int i = 0; i < parameters.length; i++) {
+//                    query = query.bind(parameters[i]).to("param" + i);
+//                }
+//            }
+//        }
+
+        return query.fetch().all().stream().toList();
     }
 }

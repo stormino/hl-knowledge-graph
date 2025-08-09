@@ -2,6 +2,7 @@ package it.hl.neo4j.controller;
 
 import it.hl.neo4j.dto.ChatRequest;
 import it.hl.neo4j.dto.GraphQueryResponse;
+import it.hl.neo4j.dto.RawQueryRequest;
 import it.hl.neo4j.service.GraphQueryService;
 import it.hl.neo4j.service.LLMService;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -40,5 +42,10 @@ public class GraphChatController {
                 "llm_available", llmService.isAvailable(),
                 "timestamp", Instant.now()
         ));
+    }
+
+    @PostMapping("/query")
+    public ResponseEntity<List<Map<String, Object>>> query(@RequestBody RawQueryRequest request) {
+        return ResponseEntity.ok(queryService.rawQuery(request));
     }
 }

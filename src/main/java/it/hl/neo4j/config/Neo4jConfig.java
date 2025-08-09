@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.data.neo4j.core.transaction.Neo4jTransactionManager;
 import org.springframework.data.neo4j.repository.config.EnableNeo4jRepositories;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -43,6 +44,12 @@ public class Neo4jConfig extends AbstractNeo4jConfig {
 
     @Override
     protected java.util.Collection<String> getMappingBasePackages() {
-        return java.util.List.of("com.example.neo4j.model");
+        return java.util.List.of("it.hl.neo4j.model");
+    }
+
+    // Neo4jClient is usually auto-configured, but if you need custom config:
+    @Bean
+    public Neo4jClient neo4jClient(Driver driver) {
+        return Neo4jClient.create(driver);
     }
 }
