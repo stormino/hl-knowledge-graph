@@ -34,6 +34,13 @@ public class GraphChatController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/create-query")
+    public ResponseEntity<String> createQuery(@RequestBody ChatRequest request) {
+        return ResponseEntity.ok(queryService.translateToCypherQuery(
+                request.getMessage().trim()
+        ));
+    }
+
     @GetMapping("/health")
     public ResponseEntity<Map<String, Object>> health() {
         return ResponseEntity.ok(Map.of(

@@ -43,6 +43,10 @@ public class GraphQueryService {
         }
     }
 
+    public String translateToCypherQuery(String userQuery) {
+        return llmService.translateToCypher(userQuery);
+    }
+
     public GraphQueryResponse processNaturalLanguageQuery(String userQuery) {
         try {
             // Generate Cypher

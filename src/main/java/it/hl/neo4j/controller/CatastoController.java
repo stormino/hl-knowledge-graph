@@ -35,53 +35,6 @@ public class CatastoController {
         }
     }
 
-    @GetMapping("/import/stats")
-    public ResponseEntity<CatastoImportService.ImportStats> getImportStats() {
-        return ResponseEntity.ok(importService.getImportStats());
-    }
-
-    @GetMapping("/titolari/cf/{codiceFiscale}")
-    public ResponseEntity<CatastoQueryService.OwnershipReport> findByCodiceFiscale(
-            @PathVariable String codiceFiscale) {
-
-        Optional<CatastoQueryService.OwnershipReport> result =
-                queryService.findOwnershipsByCodiceFiscale(codiceFiscale);
-
-        return result.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @GetMapping("/titolari/piva/{partitaIva}")
-    public ResponseEntity<CatastoQueryService.OwnershipReport> findByPartitaIva(
-            @PathVariable String partitaIva) {
-
-        Optional<CatastoQueryService.OwnershipReport> result =
-                queryService.findOwnershipsByIdentificativoFiscale(partitaIva);
-
-        return result.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @GetMapping("/immobile/{immobileId}/comproprietari")
-    public ResponseEntity<List<CatastoQueryService.CoOwnershipReport>> findCoOwners(
-            @PathVariable String immobileId) {
-
-        List<CatastoQueryService.CoOwnershipReport> coOwners =
-                queryService.findCoOwnersByImmobileId(immobileId);
-
-        return ResponseEntity.ok(coOwners);
-    }
-
-    @GetMapping("/foglio/{foglio}/proprietari")
-    public ResponseEntity<List<CatastoQueryService.CoOwnershipReport>> findOwnersByFoglio(
-            @PathVariable String foglio) {
-
-        List<CatastoQueryService.CoOwnershipReport> owners =
-                queryService.findOwnersByFoglio(foglio);
-
-        return ResponseEntity.ok(owners);
-    }
-
     @GetMapping("/soggetti/search")
     public ResponseEntity<List<Sog>> searchSoggetti(@RequestParam String nome) {
         List<Sog> soggetti = queryService.findSoggettiByNome(nome);

@@ -51,11 +51,14 @@ public class Sog {
     @Property
     private String partitaIva;
 
-    @Relationship(type = "OWNS", direction = Relationship.Direction.OUTGOING)
-    private Set<OwnershipRelationship> ownerships;
+    @Relationship(type = "POSSIEDE_TERRENO", direction = Relationship.Direction.OUTGOING)
+    private Set<TitTer> titTers;
+
+    @Relationship(type = "POSSIEDE_FABBRICATO", direction = Relationship.Direction.OUTGOING)
+    private Set<TitFab> titFabs;
 
     public static Sog parse(String input) {
-        String[] campi = input.split("\\|");
+        String[] campi = input.split("\\|", -1);
         if (campi.length < 5)
             throw new IllegalArgumentException("Stringa input non valida.");
 

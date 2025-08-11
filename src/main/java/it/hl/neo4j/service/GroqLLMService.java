@@ -39,15 +39,18 @@ public class GroqLLMService implements LLMService {
         Schema:
         - Nodi Soggetto: proprietà (identificativoSoggetto, nome, displayName, tipoSoggetto, cognome, nomePersonaFisica, codiceFiscale, denominazione, sede, partitaIva, identificativoFiscale)
         - Nodi Terreno: proprietà (identificativoImmobile, displayName, foglio, numero, qualita, classe, ettari, are, centiare, redditoDominicaleEuro, redditoAgrarioEuro)
-        - Relazione OWNS: (Soggetto)-[OWNS]->(Terreno)
+        - Nodi Fabbricato: proprietà (identificativoImmobile, displayName, codiceAmministrativo, sezione, tipoImmobile, progressivo, zona, categoria, classe, consistenza, superficie, renditaLire, renditaEuro, lotto, edificio, scala, interno1, interno2, piano1, piano2, piano3, piano4, dataEfficaciaGenerante, dataRegistrazioneGenerante, tipoNotaGenerante, numeroNotaGenerante, progressivoNotaGenerante, annoNotaGenerante, dataEfficaciaConclusiva, dataRegistrazioneConclusiva, tipoNotaConclusiva, numeroNotaConclusiva, progressivoNotaConclusiva, annoNotaConclusiva, partita, annotazione, identificativoMutazioneIniziale, identificativoMutazioneFinale, protocolloNotifica, dataNotifica, codiceCausaleAttoGenerante, descrizioneAttoGenerante, codiceCausaleAttoConclusivo, descrizioneAttoConclusivo, flagClassamento, sezioniUrbane, fogli, numeri, denominatori, subalerni, edificialita, toponimi, indirizzi, civici1, civici2, civici3, codiciStrada, utilitaSezioniUrbane, utilitaFogli, utilitaNumeri, utilitaDenominatori, utilitaSubalerni, codiciRiserva, partiteIscrizioneRiserva)
+        - Relazione POSSIEDE_TERRENO: (Soggetto)-[POSSIEDE_TERRENO]->(Terreno)
+        - Relazione POSSIEDE_FABBRICATO: (Soggetto)-[POSSIEDE_FABBRICATO]->(Fabbricato)
         
         Importante:
-        - Usa sempre le etichette esatte: "Soggetto" e "Terreno"
-        - Quando possibile, restituisci entità correlate: RETURN s, t
+        - Usa sempre le etichette esatte: "Soggetto", "Terreno", "Fabbricato"
+        - Quando possibile, restituisci entità correlate: RETURN s, t, f
         - Restituisci solo la query Cypher, nessuna spiegazione
         
         Esempi:
-        "Trova tutti i terreni di Mario" -> MATCH (s:Soggetto)-[:OWNS]->(t:Terreno) WHERE toLower(s.nome) CONTAINS toLower('Mario') RETURN s, t
+        "Trova tutti i terreni di Mario" -> MATCH (s:Soggetto)-[:POSSIEDE_TERRENO]->(t:Terreno) WHERE toLower(s.nome) CONTAINS toLower('Mario') RETURN s, t
+        "Trova tutti i soggetti che posseggono sia terreni che fabbricati" -> MATCH (s:Soggetti)-[:POSSIEDE_TERRENI]->(:Terreni) MATCH (s)-[:POSSIEDE_FABBRICATI]->(:Fabbricati) RETURN DISTINCT s
         """;
 
     @Override

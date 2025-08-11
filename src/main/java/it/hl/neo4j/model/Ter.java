@@ -64,7 +64,7 @@ public class Ter {
     private String displayName;
 
     public static Ter parse(String input) {
-        String[] campi = input.split("\\|");
+        String[] campi = input.split("\\|", -1);
         if (campi.length < 23) return null;
 
         Ter ter = new Ter();

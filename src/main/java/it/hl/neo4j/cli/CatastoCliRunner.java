@@ -29,7 +29,6 @@ public class CatastoCliRunner implements ApplicationRunner {
             case "help", "-h", "--help" -> printHelp();
             case "import" -> handleImport(args);
             case "titolari" -> handleTitolari(args);
-            case "stats" -> handleStats();
             default -> {
                 System.out.println("Comando sconosciuto: " + command);
                 printHelp();
@@ -49,12 +48,6 @@ public class CatastoCliRunner implements ApplicationRunner {
             System.out.println("Importando dati da: " + directory);
             importService.importCatastoData(directory);
 
-            CatastoImportService.ImportStats stats = importService.getImportStats();
-            System.out.printf("Import completato:%n");
-            System.out.printf("- Terreni: %d%n", stats.terreniCount());
-            System.out.printf("- Soggetti: %d%n", stats.soggettiCount());
-            System.out.printf("- Relazioni: %d%n", stats.relationshipsCount());
-
         } catch (Exception e) {
             System.err.println("Errore durante l'import: " + e.getMessage());
             log.error("Import error", e);
@@ -68,50 +61,6 @@ public class CatastoCliRunner implements ApplicationRunner {
         }
 
         String codiceFiscale = args.getNonOptionArgs().get(1);
-
-        queryService.findOwnershipsByCodiceFiscale(codiceFiscale)
-                .ifPresentOrElse(
-                        this::printOwnershipReport,
-                        () -> System.out.println("Nessun risultato trovato per: " + codiceFiscale)
-                );
-    }
-
-    private void handleStats() {
-        CatastoImportService.ImportStats stats = importService.getImportStats();
-        System.out.printf("Statistiche database:%n");
-        System.out.printf("- Terreni: %d%n", stats.terreniCount());
-        System.out.printf("- Soggetti: %d%n", stats.soggettiCount());
-        System.out.printf("- Relazioni di proprietà: %d%n", stats.relationshipsCount());
-    }
-
-    private void printOwnershipReport(CatastoQueryService.OwnershipReport report) {
-        var soggetto = report.soggetto();
-
-        System.out.printf("=== REPORT PROPRIETÀ ===%n");
-        System.out.printf("Soggetto: %s%n", soggetto.getNome());
-        System.out.printf("Tipo: %s%n", "P".equals(soggetto.getTipoSoggetto()) ? "Persona Fisica" : "Persona Giuridica");
-        System.out.printf("Codice Fiscale/P.IVA: %s%n", soggetto.getIdentificativoFiscale());
-        System.out.printf("Numero proprietà: %d%n%n", report.totalOwnerships());
-
-        if (report.ownerships() != null) {
-            int i = 1;
-            for (var ownership : report.ownerships()) {
-                System.out.printf("--- Proprietà %d ---%n", i++);
-                var terreno = ownership.getTerreno();
-                if (terreno != null) {
-                    System.out.printf("Foglio: %s, Particella: %s%n",
-                            terreno.getFoglio(), terreno.getNumero());
-                    System.out.printf("Qualità: %s, Classe: %s%n",
-                            terreno.getQualita(), terreno.getClasse());
-                    System.out.printf("Superficie: %s ha %s are %s ca%n",
-                            terreno.getEttari(), terreno.getAre(), terreno.getCentiare());
-                }
-                System.out.printf("Quota: %s/%s%n",
-                        ownership.getQuotaNumeratore(), ownership.getQuotaDenominatore());
-                System.out.printf("Diritto: %s%n", ownership.getCodiceDiritto());
-                System.out.println();
-            }
-        }
     }
 
     private void printHelp() {

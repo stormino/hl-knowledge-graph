@@ -4,10 +4,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.neo4j.core.schema.*;
 
+import java.util.Objects;
+
 @Data
 @NoArgsConstructor
 @RelationshipProperties
-public class Tit {
+public class TitTer {
+
     @Id
     @GeneratedValue
     private Long id;
@@ -75,15 +78,12 @@ public class Tit {
     @Property
     private String displayName;
 
-    @TargetNode
-    private Ter terreno;
-
-    public static Tit parse(String input) {
-        String[] fields = input.split("\\|");
+    public static TitTer parse(String input) {
+        String[] fields = input.split("\\|", -1);
         if (fields.length < 32)
-            throw new IllegalArgumentException("La stringa di input non contiene tutti i campi richiesti.");
+            throw new IllegalArgumentException("La stringa di input non contiene tutti i campi richiesti: " + fields.length);
 
-        Tit tit = new Tit();
+        TitTer tit = new TitTer();
         tit.setCodiceAmministrativo(fields[0]);
         tit.setSezione(fields[1]);
         // Skip identificativoSoggetto (fields[2]) - handled by relationship
@@ -118,23 +118,28 @@ public class Tit {
         tit.setDescrizioneAttoConclusivo(fields[31]);
 
         // Set display name for better visualization
-        if (tit.quotaDenominatore.compareTo("0") != 0 && tit.quotaNumeratore.compareTo("0") != 0) {
-            tit.setDisplayName(CodiciDiritto.fromCodice(tit.codiceDiritto).getDescrizione() + " (" + tit.quotaNumeratore + "/" + tit.quotaDenominatore + ")");
-        } else {
-            tit.setDisplayName(CodiciDiritto.fromCodice(tit.codiceDiritto).getDescrizione());
+        if (tit.codiceDiritto != null) {
+            if (tit.quotaDenominatore.compareTo("0") != 0 && tit.quotaNumeratore.compareTo("0") != 0) {
+                tit.setDisplayName(Objects.requireNonNull(CodiciDiritto.fromCodice(tit.codiceDiritto)).getDescrizione() + " (" + tit.quotaNumeratore + "/" + tit.quotaDenominatore + ")");
+            } else {
+                tit.setDisplayName(Objects.requireNonNull(CodiciDiritto.fromCodice(tit.codiceDiritto)).getDescrizione());
+            }
         }
         return tit;
     }
 
     // Helper method to extract identificativoSoggetto from raw input
     public static String extractIdentificativoSoggetto(String input) {
-        String[] fields = input.split("\\|");
+        String[] fields = input.split("\\|", -1);
         return fields.length > 2 ? fields[2] : null;
     }
 
     // Helper method to extract identificativoImmobile from raw input
     public static String extractIdentificativoImmobile(String input) {
-        String[] fields = input.split("\\|");
+        String[] fields = input.split("\\|", -1);
         return fields.length > 4 ? fields[4] : null;
     }
+
+    @TargetNode
+    private Ter terreno;
 }
